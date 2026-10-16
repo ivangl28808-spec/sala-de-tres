@@ -19,6 +19,7 @@
   --mono: "JetBrains Mono", Consolas, ui-monospace, monospace;
 }
 * { box-sizing: border-box; }
+[hidden] { display: none !important; }
 html, body { height: 100%; }
 body { margin: 0; background: var(--noche); color: var(--fg); font: 15px/1.5 var(--texto); }
 body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 10; background: var(--panel); }
@@ -100,7 +101,11 @@ details.ias p { margin: 6px 0 0; }
   <form class="escribir" id="form" autocomplete="off">
     <div class="fila">
       <textarea id="texto" rows="1" placeholder="Escribe a la sala…" aria-label="Mensaje"></textarea>
-      <button class="enviar" id="btnEnviar" type="submit" disabl<script>
+      <button class="enviar" id="btnEnviar" type="submit" disabled>Enviar</button>
+    </div>
+  </form>
+</div>
+<script>
 const $ = id => document.getElementById(id);
 const BASE = "https://qxsnklhmaitdcfvtwhrk.supabase.co/rest/v1/sala_mensajes";
 const CLAVE = "sb_publishable_8KovFzdnNMA7JZIbMFpQ4A_pjn4_b6R"; // clave pública: solo deja leer y añadir mensajes (reglas en Supabase)
