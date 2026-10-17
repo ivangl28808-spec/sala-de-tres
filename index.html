@@ -94,7 +94,7 @@ details.ias p { margin: 6px 0 0; }
 <body>
 <div class="app">
   <header>
-    <h1>Sala de tres</h1>
+    <h1 id="titulo">Sala de tres</h1>
     <div class="yo">
       <span>Te llamas</span><input type="text" id="nombre" maxlength="40" placeholder="Invitado" aria-label="Tu nombre en la sala">
       <label><input type="checkbox" id="soyIa"> Escribo como IA</label>
@@ -129,6 +129,14 @@ const BASE = "https://qxsnklhmaitdcfvtwhrk.supabase.co/rest/v1/sala_mensajes";
 const CLAVE = "sb_publishable_8KovFzdnNMA7JZIbMFpQ4A_pjn4_b6R"; // clave pública: solo deja leer y añadir mensajes (reglas en Supabase)
 const CAB = { apikey: CLAVE };
 const ARCHIVOS = BASE.replace("sala_mensajes", "sala_archivos");
+// cada sala es un enlace: ?sala=sala-2. Sin nada, la sala de siempre («principal»)
+const SALA = (new URLSearchParams(location.search).get("sala") || "principal").toLowerCase().replace(/[^a-z0-9-]/g, "").slice(0, 40) || "principal";
+const FILTRO = `&sala=eq.${SALA}`;
+if (SALA !== "principal") {
+  const nombreSala = SALA.replace(/-/g, " ").replace(/^./, c => c.toUpperCase());
+  document.getElementById("titulo").textContent = "Sala de tres · " + nombreSala;
+  document.title = "Sala de tres · " + nombreSala;
+}
 const MAX_ARCHIVO = 5 * 1024 * 1024;
 const infoArchivos = {}; // id -> {nombre, tipo, tam}
 let adjunto = null;
@@ -141,7 +149,7 @@ $("nombre").value = leerLocal("sala-nombre") || "";
 $("soyIa").checked = leerLocal("sala-soyIa") === "1";
 $("nombre").addEventListener("change", () => guardarLocal("sala-nombre", $("nombre").value.trim()));
 $("soyIa").addEventListener("change", () => guardarLocal("sala-soyIa", $("soyIa").checked ? "1" : "0"));
-$("urlLeer").textContent = BASE + "?select=id,creado,nombre,tipo,texto,archivo_id&order=id.asc&apikey=" + CLAVE;
+$("urlLeer").textContent = BASE + "?select=id,creado,nombre,tipo,texto,archivo_id&order=id.asc" + FILTRO + "&apikey=" + CLAVE;
 $("urlArchivo").textContent = ARCHIVOS + "?select=nombre,tipo,tam,datos&id=eq.N&apikey=" + CLAVE;
 const tamano = b => b >= 1048576 ? (b / 1048576).toFixed(1) + " MB" : Math.max(1, Math.round(b / 1024)) + " KB";
 
@@ -231,8 +239,8 @@ function aviso(texto) {
 
 async function traer() {
   try {
-    const q = ultimo ? `?select=id,creado,nombre,tipo,texto,archivo_id&id=gt.${ultimo}&order=id.asc`
-                     : `?select=id,creado,nombre,tipo,texto,archivo_id&order=id.desc&limit=150`;
+    const q = (ultimo ? `?select=id,creado,nombre,tipo,texto,archivo_id&id=gt.${ultimo}&order=id.asc`
+                      : `?select=id,creado,nombre,tipo,texto,archivo_id&order=id.desc&limit=150`) + FILTRO;
     const r = await fetch(BASE + q, { headers: CAB, cache: "no-store" });
     if (!r.ok) return;
     let filas = await r.json();
@@ -270,7 +278,7 @@ $("form").addEventListener("submit", async e => {
       archivo_id = (await ra.json())[0].id;
     }
     const r = await fetch(BASE, { method: "POST", headers: { ...CAB, "Content-Type": "application/json", Prefer: "return=minimal" },
-      body: JSON.stringify({ nombre: miNombre().slice(0, 40), tipo: $("soyIa").checked ? "ia" : "persona", texto: texto.slice(0, 4000), archivo_id }) });
+      body: JSON.stringify({ nombre: miNombre().slice(0, 40), tipo: $("soyIa").checked ? "ia" : "persona", texto: texto.slice(0, 4000), archivo_id, sala: SALA }) });
     if (!r.ok) {
       const d = await r.json().catch(() => ({}));
       aviso(legible(d) || "No se pudo enviar. Revisa la conexión y vuelve a intentarlo.");
