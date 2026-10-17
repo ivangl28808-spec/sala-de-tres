@@ -36,6 +36,9 @@ h1 { margin: 0; font-family: var(--display); font-size: 1.05rem; letter-spacing:
 .persona .luz { width: 8px; height: 8px; border-radius: 50%; background: var(--c); box-shadow: 0 0 8px var(--c); }
 .persona small { color: var(--tenue); font-size: .74rem; }
 .persona.apagada .luz { background: var(--linea); box-shadow: none; }
+.ir-sala { align-self: flex-start; display: inline-flex; align-items: center; gap: 8px; padding: 7px 14px; border-radius: 10px; text-decoration: none; color: #1C0024; background: var(--sesion); border: 1px solid var(--sesion); font-weight: 650; font-size: .86rem; box-shadow: 0 0 14px #FFC83D44; }
+.ir-sala:hover { filter: brightness(1.08); }
+.ir-sala.volver { color: var(--fg); background: var(--card); border-color: var(--linea); box-shadow: none; font-weight: 500; }
 
 .mensajes { overflow-y: auto; display: flex; flex-direction: column; gap: 12px;
   padding-block: 18px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
@@ -95,6 +98,8 @@ details.ias p { margin: 6px 0 0; }
 <div class="app">
   <header>
     <h1 id="titulo">Sala de tres</h1>
+    <div class="gente" id="gente" hidden></div>
+    <a class="ir-sala" id="irSala" hidden></a>
     <div class="yo">
       <span>Te llamas</span><input type="text" id="nombre" maxlength="40" placeholder="Invitado" aria-label="Tu nombre en la sala">
       <label><input type="checkbox" id="soyIa"> Escribo como IA</label>
@@ -136,6 +141,26 @@ if (SALA !== "principal") {
   const nombreSala = SALA.replace(/-/g, " ").replace(/^./, c => c.toUpperCase());
   document.getElementById("titulo").textContent = "Sala de tres · " + nombreSala;
   document.title = "Sala de tres · " + nombreSala;
+}
+// salas enlazadas: un botón en la cabecera lleva de una a otra; «gente» son los participantes que se muestran arriba
+const ENLACES = {
+  "sala-2": { a: "direccion", texto: "🧭 Abrir chat de dirección · Iván, ATLAS y CERBERUS", nuevaPestana: true },
+  "direccion": { titulo: "Dirección", a: "sala-2", texto: "← Volver a la sala 2", volver: true, gente: [["Iván", "persona", "var(--tu)"], ["ATLAS", "IA", "var(--sala)"], ["CERBERUS", "IA", "var(--otra-ia)"]] },
+};
+const enlace = ENLACES[SALA];
+if (enlace) {
+  if (enlace.titulo) document.title = $("titulo").textContent = "Sala de tres · " + enlace.titulo;
+  const a = $("irSala");
+  a.href = "?sala=" + enlace.a; a.textContent = enlace.texto; a.hidden = false;
+  if (enlace.volver) a.classList.add("volver");
+  if (enlace.nuevaPestana) { a.target = "_blank"; a.rel = "noopener"; }
+  for (const [nombre, tipo, color] of enlace.gente || []) {
+    const p = document.createElement("span"); p.className = "persona"; p.style.setProperty("--c", color);
+    const luz = document.createElement("span"); luz.className = "luz";
+    const sm = document.createElement("small"); sm.textContent = tipo;
+    p.append(luz, nombre + " ", sm); $("gente").appendChild(p);
+  }
+  $("gente").hidden = !(enlace.gente || []).length;
 }
 const MAX_ARCHIVO = 5 * 1024 * 1024;
 const infoArchivos = {}; // id -> {nombre, tipo, tam}
